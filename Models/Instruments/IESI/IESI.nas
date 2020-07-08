@@ -194,7 +194,7 @@ setlistener("sim/signals/fdm-initialized", func {
 		"view": [1024, 1024],
 		"mipmapping": 1
 	});
-	IESI_display.addPlacement({"node": "iesi.screen"});
+	#IESI_display.addPlacement({"node": "iesi.screen"});
 	var group_IESI = IESI_display.createGroup();
 	
 	IESI = canvas_IESI.new(group_IESI, "Aircraft/A320-family/Models/Instruments/IESI/res/iesi.svg");

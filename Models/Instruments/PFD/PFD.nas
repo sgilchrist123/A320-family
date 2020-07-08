@@ -2645,8 +2645,8 @@ setlistener("sim/signals/fdm-initialized", func {
 		"view": [1024, 1024],
 		"mipmapping": 1
 	});
-	PFD1_display.addPlacement({"node": "pfd1.screen"});
-	PFD2_display.addPlacement({"node": "pfd2.screen"});
+	#PFD1_display.addPlacement({"node": "pfd1.screen"});
+	#PFD2_display.addPlacement({"node": "pfd2.screen"});
 	var group_pfd1 = PFD1_display.createGroup();
 	var group_pfd1_test = PFD1_display.createGroup();
 	var group_pfd1_mismatch = PFD1_display.createGroup();

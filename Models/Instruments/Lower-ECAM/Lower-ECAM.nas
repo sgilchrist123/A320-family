@@ -3581,7 +3581,7 @@ setlistener("sim/signals/fdm-initialized", func {
 		"view": [1024, 1024],
 		"mipmapping": 1
 	});
-	lowerECAM_display.addPlacement({"node": "lecam.screen"});
+	#lowerECAM_display.addPlacement({"node": "lecam.screen"});
 	var groupApu = lowerECAM_display.createGroup();
 	var groupBleed = lowerECAM_display.createGroup();
 	var groupCond = lowerECAM_display.createGroup();

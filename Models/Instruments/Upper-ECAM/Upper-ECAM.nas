@@ -1233,7 +1233,7 @@ setlistener("sim/signals/fdm-initialized", func {
 		"view": [1024, 1024],
 		"mipmapping": 1
 	});
-	upperECAM_display.addPlacement({"node": "uecam.screen"});
+	#upperECAM_display.addPlacement({"node": "uecam.screen"});
 	var group_cfm_eis2 = upperECAM_display.createGroup();
 	var group_iae_eis2 = upperECAM_display.createGroup();
 	var group_test = upperECAM_display.createGroup();
