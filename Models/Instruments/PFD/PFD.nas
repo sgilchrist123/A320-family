@@ -16,7 +16,7 @@ var elapsedtime = 0;
 var altTens = 0;
 var altPolarity = "";
 var track_diff = 0;
-var AICenter = nil; # FPV
+var AICenter = nil;
 
 # Fetch nodes:
 var state1 = props.globals.getNode("/systems/thrust/state1", 1);
@@ -138,7 +138,6 @@ var adr_1_fault = props.globals.getNode("/controls/navigation/adirscp/lights/adr
 var adr_2_fault = props.globals.getNode("/controls/navigation/adirscp/lights/adr-2-fault", 1);
 var adr_3_fault = props.globals.getNode("/controls/navigation/adirscp/lights/adr-3-fault", 1);
 var air_data_switch = props.globals.getNode("/controls/navigation/switching/air-data", 1);
-var alpha = props.globals.getNode("/fdm/jsbsim/aero/alpha-deg", 1); # TODO - Is this used anywhere?
 
 # Create Nodes:
 var alt_diff = props.globals.initNode("/instrumentation/pfd/alt-diff", 0.0, "DOUBLE");
@@ -150,7 +149,7 @@ var horizon_ground = props.globals.initNode("/instrumentation/pfd/horizon-ground
 var hdg_diff = props.globals.initNode("/instrumentation/pfd/hdg-diff", 0.0, "DOUBLE");
 var hdg_scale = props.globals.initNode("/instrumentation/pfd/heading-scale", 0.0, "DOUBLE");
 var track = props.globals.initNode("/instrumentation/pfd/track-deg", 0.0, "DOUBLE");
-#var track_diff = props.globals.initNode("/instrumentation/pfd/track-hdg-diff", 0.0, "DOUBLE"); # returns incorrect value and can calculate on the fly
+#var track_diff = props.globals.initNode("/instrumentation/pfd/track-hdg-diff", 0.0, "DOUBLE"); # returns incorrect value
 var du1_test = props.globals.initNode("/instrumentation/du/du1-test", 0, "BOOL");
 var du1_test_time = props.globals.initNode("/instrumentation/du/du1-test-time", 0.0, "DOUBLE");
 var du1_offtime = props.globals.initNode("/instrumentation/du/du1-off-time", 0.0, "DOUBLE");
@@ -977,13 +976,15 @@ var canvas_PFD_base = {
 			me["HDG_target"].hide();
 		}
 		
-		track_diff = geo.normdeg180(track.getValue() - heading.getValue());
+
+		var heading_deg = heading.getValue();
+		track_diff = geo.normdeg180(track.getValue() - heading_deg);
 		me["TRK_pointer"].setTranslation(me.getTrackDiffPixels(track_diff),0);
 		split_ils = split("/", ils_data1.getValue());
 		
 		if (ap_ils_mode.getValue() == 1 and size(split_ils) == 2) {
 			magnetic_hdg = ils_crs.getValue();
-			magnetic_hdg_dif = geo.normdeg180(magnetic_hdg - heading.getValue());
+			magnetic_hdg_dif = geo.normdeg180(magnetic_hdg - heading_deg);
 			if (magnetic_hdg_dif >= -23.62 and magnetic_hdg_dif <= 23.62) {
 				me["CRS_pointer"].setTranslation((magnetic_hdg_dif / 10) * 98.5416, 0);
 				me["ILS_HDG_R"].hide();
@@ -1026,24 +1027,6 @@ var canvas_PFD_base = {
 		me.AI_horizon_hdg_trans.setTranslation(me.middleOffset, horizon_pitch.getValue() * 11.825);
 		me.AI_horizon_hdg_rot.setRotation(-roll_cur * D2R, me["AI_center"].getCenter());
 		me["AI_heading"].update();
-	},
-	
-	# Dim the yellow outline of fixed aircraft symbol on PFDs (eg when crew select TRK)
-	# 1 == dim 
-	# 0 == undim
-	dimFixedAircraftOutline: func(dim_bool) {
-		var r = 0.345098039;
-		var g = 0.349019608;
-		var b = 0.058823529;
-		
-		if (dim_bool == 0) {
-			r = 0.788235294;
-			g = 0.819607843;
-			b = 0.129411765;
-		} 
-
-		me["fixed_aircraft_outline_1"].setColor(r, g, b);
-		me["fixed_aircraft_outline_2"].setColor(r, g, b);
 	},
 
 	# Get Angle of Attack from ADR1 or, depending on Switching panel, ADR3
@@ -1136,40 +1119,22 @@ var canvas_PFD_1 = {
 			me["FD_pitch"].hide();
 		}
 		
-		# FPV
-		# If TRK FPA selected on the FCU, display FPV on PFD1
+		# If TRK FPA selected, display FPV on PFD1
 		if (ap_trk_sw.getValue() == 0 ) {
 			me["FPV"].hide();	
-			me.dimFixedAircraftOutline(0);
 		} else {
 			var aoa = me.getAOAForPFD1();	
 			if (aoa == nil or (systems.ADIRS.ADIRunits[0].aligned != 1 and att_switch.getValue() == 0) or (systems.ADIRS.ADIRunits[2].aligned != 1 and att_switch.getValue() == -1)){
 				me["FPV"].hide();	
-				me.dimFixedAircraftOutline(0);
 			} else {
 				var roll_deg = roll.getValue() or 0; 
-				var alpha_deg = aoa;
-				var fpa_deg = pitch.getValue() - alpha_deg;
-
 				AICenter = me["AI_center"].getCenter();
 				var track_x_translation = me.getTrackDiffPixels(track_diff); 
 
-				# Display FPV in red if FPA greater or less plus or minus 9.9 degrees
-				# if (fpa_deg > 9.9) {
-				# 	alpha_deg = alpha_deg + (fpa_deg - 9.9);
-				# 	me["FPV"].setColor(1, 0, 0);
-				# } else if (fpa_deg < -9.9) {
-				# 	alpha_deg = alpha_deg + (fpa_deg + 9.9);
-				# 	me["FPV"].setColor(1, 0, 0);
-				# } else {
-				# 	me["FPV"].setColor(0.066666667, 0.752941176, 0.294117647);
-				# }
-
-				me.AI_fpv_trans.setTranslation(track_x_translation, math.clamp(alpha_deg, -20, 20) * 12.5); 
+				me.AI_fpv_trans.setTranslation(track_x_translation, math.clamp(aoa, -20, 20) * 12.5); 
 				me.AI_fpv_rot.setRotation(-roll_deg * D2R, AICenter);
 				me["FPV"].setRotation(roll_deg * D2R); # It shouldn't be rotated, only the axis should be
 				me["FPV"].show();
-				me.dimFixedAircraftOutline(1);
 			}
 
 		}
@@ -1912,40 +1877,22 @@ var canvas_PFD_2 = {
 			me["FD_pitch"].hide();
 		}
 		
-		# FPV
-		# If TRK FPA selected on the FCU, display FPV on PFD2
+		# If TRK FPA selected, display FPV on PFD2
 		if (ap_trk_sw.getValue() == 0 ) {
 			me["FPV"].hide();	
-			me.dimFixedAircraftOutline(0);
 		} else {
 			var aoa = me.getAOAForPFD2();
 			if (aoa == nil or (systems.ADIRS.ADIRunits[1].aligned != 1 and att_switch.getValue() == 0) or (systems.ADIRS.ADIRunits[2].aligned != 1 and att_switch.getValue() == 1)) {
 				me["FPV"].hide();	
-				me.dimFixedAircraftOutline(0);
 			} else {
-				var roll_deg = roll.getValue() or 0;
-				var alpha_deg = aoa;
-				var fpa_deg = pitch.getValue() - alpha_deg;
-	
+				var roll_deg = roll.getValue() or 0;	
 				AICenter = me["AI_center"].getCenter();
 				var track_x_translation = me.getTrackDiffPixels(track_diff);
 
-				# Display FPV in red if FPA greater or less plus or minus 9.9 degrees
-				# if (fpa_deg > 9.9) {
-				# 	alpha_deg = alpha_deg + (fpa_deg - 9.9);
-				# 	me["FPV"].setColor(1, 0, 0);
-				# } else if (fpa_deg < -9.9) {
-				# 	alpha_deg = alpha_deg + (fpa_deg + 9.9);
-				# 	me["FPV"].setColor(1, 0, 0);
-				# } else {
-				# 	me["FPV"].setColor(0.066666667, 0.752941176, 0.294117647);
-				# }
-
-				me.AI_fpv_trans.setTranslation(track_x_translation, math.clamp(alpha_deg, -20, 20) * 12.5);
+				me.AI_fpv_trans.setTranslation(track_x_translation, math.clamp(aoa, -20, 20) * 12.5);
 				me.AI_fpv_rot.setRotation(-roll_deg * D2R, AICenter);
 				me["FPV"].setRotation(roll_deg * D2R); # It shouldn't be rotated, only the axis should be
 				me["FPV"].show();
-				me.dimFixedAircraftOutline(1);
 			}
 		}
 
